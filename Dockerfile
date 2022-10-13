@@ -3,7 +3,7 @@ FROM golang:1.11.0-alpine3.8 AS golang-build
 RUN mkdir -p /go/src/github.com/AirHelp/rabbit-amazon-forwarder
 WORKDIR /go/src/github.com/AirHelp/rabbit-amazon-forwarder
 
-RUN apk --no-cache add git && go get -u github.com/golang/dep/cmd/dep
+RUN apk --no-cache add git gcc go-dep
 
 COPY Gopkg.toml Gopkg.lock ./
 RUN dep ensure -v -vendor-only

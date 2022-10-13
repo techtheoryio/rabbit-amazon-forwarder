@@ -45,10 +45,10 @@ type workerParams struct {
 
 // CreateConsumer creates consumer from string map
 func CreateConsumer(entry config.RabbitEntry, rabbitConnector connector.RabbitConnector) consumer.Client {
-    // merge RoutingKey with RoutingKeys
-    if entry.RoutingKey != "" {
-    	entry.RoutingKeys = append(entry.RoutingKeys, entry.RoutingKey)
-    }
+	// merge RoutingKey with RoutingKeys
+	if entry.RoutingKey != "" {
+		entry.RoutingKeys = append(entry.RoutingKeys, entry.RoutingKey)
+	}
 	return Consumer{entry.Name, entry.ConnectionURL, entry.ExchangeName, entry.QueueName, entry.RoutingKeys, rabbitConnector}
 }
 
@@ -115,36 +115,6 @@ func (c Consumer) connect() (<-chan amqp.Delivery, *amqp.Connection, *amqp.Chann
 
 func (c Consumer) setupExchangesAndQueues(conn *amqp.Connection, ch *amqp.Channel) (<-chan amqp.Delivery, *amqp.Connection, *amqp.Channel, error) {
 	var err error
-	deadLetterExchangeName := c.QueueName + "-dead-letter"
-	deadLetterQueueName := c.QueueName + "-dead-letter"
-	// regular exchange
-	if err = ch.ExchangeDeclare(c.ExchangeName, "topic", true, false, false, false, nil); err != nil {
-		return failOnError(err, "Failed to declare an exchange:"+c.ExchangeName)
-	}
-	// dead-letter-exchange
-	if err = ch.ExchangeDeclare(deadLetterExchangeName, "fanout", true, false, false, false, nil); err != nil {
-		return failOnError(err, "Failed to declare an exchange:"+deadLetterExchangeName)
-	}
-	// dead-letter-queue
-	if _, err = ch.QueueDeclare(deadLetterQueueName, true, false, false, false, nil); err != nil {
-		return failOnError(err, "Failed to declare a queue:"+deadLetterQueueName)
-	}
-	if err = ch.QueueBind(deadLetterQueueName, "#", deadLetterExchangeName, false, nil); err != nil {
-		return failOnError(err, "Failed to bind a queue:"+deadLetterQueueName)
-	}
-	// regular queue
-	if _, err = ch.QueueDeclare(c.QueueName, true, false, false, false,
-		amqp.Table{
-			"x-dead-letter-exchange": deadLetterExchangeName,
-		}); err != nil {
-		return failOnError(err, "Failed to declare a queue:"+c.QueueName)
-	}
-	// bind all of the routing keys
-	for _, routingKey := range c.RoutingKeys {
-		if err = ch.QueueBind(c.QueueName, routingKey, c.ExchangeName, false, nil); err != nil {
-			return failOnError(err, "Failed to bind a queue:"+c.QueueName)
-		}
-	}
 
 	msgs, err := ch.Consume(c.QueueName, c.Name(), false, false, false, false, nil)
 	if err != nil {
